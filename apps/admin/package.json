@@ -1,0 +1,29 @@
+{
+  "name": "@lms/admin",
+  "type": "module",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "dev": "vite --host 0.0.0.0 --port 5173",
+    "build": "vite build",
+    "preview": "vite preview --port 4173",
+    "typecheck": "tsc -p tsconfig.json --noEmit"
+  },
+  "dependencies": {
+    "@ant-design/icons": "catalog:prod",
+    "@ant-design/pro-components": "catalog:prod",
+    "@lms/shared": "workspace:*",
+    "@lms/ui": "workspace:*",
+    "antd": "catalog:prod",
+    "dayjs": "catalog:prod",
+    "react": "catalog:prod",
+    "react-dom": "catalog:prod"
+  },
+  "devDependencies": {
+    "@types/react": "catalog:dev",
+    "@types/react-dom": "catalog:dev",
+    "@vitejs/plugin-react": "catalog:dev",
+    "typescript": "catalog:dev",
+    "vite": "catalog:dev"
+  }
+}

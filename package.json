@@ -1,0 +1,27 @@
+{
+  "name": "lms-training-loop",
+  "type": "module",
+  "version": "0.1.0",
+  "private": true,
+  "packageManager": "pnpm@10.25.0",
+  "scripts": {
+    "dev": "pnpm --parallel --filter @lms/admin --filter @lms/student dev",
+    "dev:admin": "pnpm --filter @lms/admin dev",
+    "dev:student": "pnpm --filter @lms/student dev",
+    "build": "pnpm -r --filter './packages/**' --filter './apps/**' build",
+    "lint": "eslint .",
+    "test": "vitest run",
+    "typecheck": "pnpm -r --filter './packages/**' --filter './apps/**' typecheck"
+  },
+  "devDependencies": {
+    "@antfu/eslint-config": "catalog:dev",
+    "@types/node": "catalog:dev",
+    "@types/react": "catalog:dev",
+    "@types/react-dom": "catalog:dev",
+    "@vitejs/plugin-react": "catalog:dev",
+    "eslint": "catalog:dev",
+    "typescript": "catalog:dev",
+    "vite": "catalog:dev",
+    "vitest": "catalog:dev"
+  }
+}

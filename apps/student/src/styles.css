@@ -1,0 +1,69 @@
+html,
+body,
+#root {
+  min-height: 100%;
+  margin: 0;
+  font-family: Inter, Roboto, "PingFang SC", "Microsoft YaHei", sans-serif;
+  background: #eef3f8;
+}
+
+.student-shell {
+  min-height: 100vh;
+}
+
+.student-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  height: auto;
+  min-height: 64px;
+  padding: 12px 24px;
+  color: #0f172a;
+  background: rgba(255, 255, 255, 0.9);
+  border-bottom: 1px solid #e2e8f0;
+  backdrop-filter: blur(12px);
+}
+
+.student-header h1 {
+  margin: 0;
+  font-size: 20px;
+}
+
+.student-body {
+  min-height: calc(100vh - 64px);
+}
+
+.student-sider {
+  background: #ffffff;
+  border-right: 1px solid #e2e8f0;
+}
+
+.student-nav {
+  display: grid;
+  gap: 8px;
+  padding: 16px;
+}
+
+.student-nav .ant-btn {
+  justify-content: flex-start;
+}
+
+.student-content {
+  padding: 24px;
+}
+
+.student-stats {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+  gap: 16px;
+}
+
+.full-width {
+  width: 100%;
+}
+
+@media (max-width: 768px) {
+  .student-content {
+    padding: 16px;
+  }
+}
