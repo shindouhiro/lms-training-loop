@@ -1,5 +1,35 @@
-apps/admin/dist
-apps/admin/node_modules
-apps/student/dist
-apps/student/node_modules
-node_modules
+# Dependency directories
+node_modules/
+
+# Build outputs
+dist/
+build/
+
+# OS/System files
+.DS_Store
+Thumbs.db
+
+# IDEs/Editors
+.vscode/
+.idea/
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
+
+# Environment/Secrets
+.env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+
+# Logs and cache
+logs
+*.log
+npm-debug.log*
+pnpm-debug.log*
+.eslintcache
+.vite/
+*.tsbuildinfo
