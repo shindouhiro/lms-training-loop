@@ -25,7 +25,7 @@ function StudentApp(): React.ReactElement {
   const paper = data.papers.find(item => item.id === exam.paperId)!
   const questions = paper.questionIds.map(id => data.questions.find(question => question.id === id)!).filter(Boolean)
 
-  const visibleTasks = getVisibleTasksForUser(currentUser, data.userPositions, data.positions, data.coursePositionBindings, data.tasks)
+  const visibleTasks = getVisibleTasksForUser(currentUser, data.userPositions, data.positions, data.coursePositionBindings, data.tasks, new Date())
   const visibleCourses = visibleTasks
     .map(task => data.courses.find(course => course.id === task.courseId))
     .filter((course): course is Course => Boolean(course))

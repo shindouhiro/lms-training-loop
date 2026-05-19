@@ -73,6 +73,11 @@ export function createInitialData(): LmsData {
       { id: 2, content: '以下哪些属于需求识别动作？', type: 'multiple', options: [{ label: '开放式提问', value: 'A' }, { label: '复述确认', value: 'B' }, { label: '打断顾客', value: 'C' }], answer: ['A', 'B'], analysis: '提问和复述确认可以帮助识别真实需求。', difficulty: 'medium', categoryId: 1, status: 'enabled' },
       { id: 3, content: '完成课程后才可以参加课程考试。', type: 'judge', options: [{ label: '正确', value: 'true' }, { label: '错误', value: 'false' }], answer: true, analysis: '课程完成是考试资格前置条件。', difficulty: 'easy', categoryId: 1, status: 'enabled' },
     ],
+    paperQuestions: [
+      { id: 1, paperId: 1, questionId: 1, score: 30, sortOrder: 1 },
+      { id: 2, paperId: 1, questionId: 2, score: 40, sortOrder: 2 },
+      { id: 3, paperId: 1, questionId: 3, score: 30, sortOrder: 3 },
+    ],
     papers: [{ id: 1, name: '销售 L1 入门试卷', totalScore: 100, questionCount: 3, questionIds: [1, 2, 3], status: 'published' }],
     exams: [{ id: 1, name: '销售 L1 入门认证考试', paperId: 1, passScore: 60, duration: 45, limitCount: 3, status: 'published' }],
     examRecords: [{ id: 1, examId: 1, userId: 2, score: null, status: 'pending', attemptNumber: 0 }],
@@ -80,7 +85,10 @@ export function createInitialData(): LmsData {
       { id: 1, userId: 2, courseId: 1, chapterId: 1, sectionId: 1, progress: 100, status: 'completed', lastLearnTime: '2026-05-19T09:30:00+08:00' },
     ],
     tasks: [{ id: 1, name: '销售 L1 认证学习任务', courseId: 1, startTime: '2026-05-18T09:00:00+08:00', endTime: '2026-06-18T18:00:00+08:00', status: 'active', createdBy: 1 }],
-    notifications: [{ id: 1, userId: 2, type: 'course_task', title: '新的课程任务', content: '请完成销售 L1 入门认证。', isRead: false, sendTime: '2026-05-18T09:00:00+08:00' }],
+    notifications: [
+      { id: 1, userId: 2, type: 'course_task', title: '新的课程任务', content: '请完成销售 L1 入门认证。', isRead: false, sendTime: '2026-05-18T09:00:00+08:00' },
+      { id: 2, userId: 2, type: 'exam_task', title: '考试提醒', content: '您的销售 L1 入门认证考试已开放，请在截止日期前完成。', isRead: true, sendTime: '2026-05-19T08:00:00+08:00' },
+    ],
     coursePositionBindings: [{ id: 1, courseId: 1, positionId: 1 }],
     taskAssignments: [{ id: 1, taskId: 1, userId: 2 }],
   }

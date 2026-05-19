@@ -91,21 +91,6 @@ body,
   box-shadow: 0 12px 30px rgba(0, 0, 0, 0.06);
 }
 
-.student-sider {
-  background: #ffffff;
-  border-right: 1px solid #e2e8f0;
-}
-
-.student-nav {
-  display: grid;
-  gap: 8px;
-  padding: 16px;
-}
-
-.student-nav .ant-btn {
-  justify-content: flex-start;
-}
-
 .student-content {
   padding: 24px;
 }

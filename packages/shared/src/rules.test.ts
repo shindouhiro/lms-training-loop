@@ -58,4 +58,14 @@ describe('lMS 业务规则', () => {
 
     expect(visibleTasks.map(task => task.id)).toEqual([1])
   })
+
+  it('§5.3.3 学员仅在任务开始后获取任务', () => {
+    // 任务开始前，传入 now 应过滤掉未开始的任务
+    const beforeStart = getVisibleTasksForUser(user, data.userPositions, data.positions, data.coursePositionBindings, data.tasks, new Date('2026-05-01T00:00:00+08:00'))
+    expect(beforeStart).toEqual([])
+
+    // 任务进行中
+    const duringTask = getVisibleTasksForUser(user, data.userPositions, data.positions, data.coursePositionBindings, data.tasks, new Date('2026-05-19T12:00:00+08:00'))
+    expect(duringTask.map(task => task.id)).toEqual([1])
+  })
 })

@@ -42,4 +42,6 @@ export const statusText = {
   failed: '未通过',
   learning: '学习中',
   completed: '已完成',
+  enabled: '启用',
+  disabled: '禁用',
 } as const

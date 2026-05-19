@@ -1,16 +1,16 @@
 import type { ProColumns } from '@ant-design/pro-components'
-import type { Course, CourseCategory, CoursePositionBinding, Courseware, CoursewareCategory, Exam, Notification, Organization, Paper, Position, Question, Task, TaskAssignment, User } from '@lms/shared'
+import type { Course, CourseCategory, CoursePositionBinding, Courseware, CoursewareCategory, Employee, Exam, Notification, Organization, Paper, Position, Question, Task, TaskAssignment, User } from '@lms/shared'
 import { PlusOutlined, ReloadOutlined } from '@ant-design/icons'
 import { ModalForm, PageContainer, ProDescriptions, ProFormDateTimePicker, ProFormDigit, ProFormSelect, ProFormText, ProLayout, ProTable } from '@ant-design/pro-components'
 import { createInitialData, getTaskStatus } from '@lms/shared'
 import { lmsTheme, statusText } from '@lms/ui'
-import { App, Button, Card, ConfigProvider, Space, Statistic, Tabs, Tag, Tree, Upload } from 'antd'
+import { App, Button, Card, ConfigProvider, Image, Space, Statistic, Tabs, Tag, Tree, Upload } from 'antd'
 import zhCN from 'antd/locale/zh_CN'
 import React, { useMemo, useState } from 'react'
 import { createRoot } from 'react-dom/client'
 import './styles.css'
 
-type PageKey = 'dashboard' | 'coursewares' | 'coursewareCategories' | 'courseCategories' | 'courses' | 'courseDetail' | 'bindings' | 'questions' | 'papers' | 'exams' | 'tasks' | 'organizations' | 'positions' | 'users'
+type PageKey = 'dashboard' | 'coursewares' | 'coursewareCategories' | 'courseCategories' | 'courses' | 'courseDetail' | 'bindings' | 'questions' | 'papers' | 'exams' | 'tasks' | 'organizations' | 'positions' | 'employees' | 'users'
 
 const initialData = createInitialData()
 
@@ -54,7 +54,14 @@ const routes = {
         { path: '/base/positions', name: '岗位管理' },
       ],
     },
-    { path: '/users', name: '系统管理' },
+    {
+      path: '/system',
+      name: '系统管理',
+      routes: [
+        { path: '/system/employees', name: '员工管理' },
+        { path: '/system/users', name: '用户管理' },
+      ],
+    },
   ],
 }
 
@@ -72,7 +79,8 @@ const pathToPage: Record<string, PageKey> = {
   '/tasks': 'tasks',
   '/base/organizations': 'organizations',
   '/base/positions': 'positions',
-  '/users': 'users',
+  '/system/employees': 'employees',
+  '/system/users': 'users',
 }
 
 function publishTag(status: string): React.ReactNode {
@@ -113,8 +121,8 @@ function AdminApp(): React.ReactElement {
           type: values.type ?? 'video',
           url: values.url ?? '/mock/new',
           duration: values.duration ?? 10,
-          cover: '',
-          isRequired: true,
+          cover: values.cover ?? '',
+          isRequired: values.isRequired ?? true,
           categoryId: values.categoryId ?? 1,
           status: 'draft',
         },
@@ -301,22 +309,30 @@ function AdminApp(): React.ReactElement {
     message.success('岗位已新增')
   }
 
-  const addUser = (values: Partial<User>): void => {
+  const addEmployee = (values: Partial<Employee>): void => {
     const id = Date.now()
     setData(current => ({
       ...current,
       employees: [...current.employees, {
         id,
-        name: values.name ?? '新用户',
-        employeeNo: `E-${id}`,
-        phone: '13800000000',
-        organizationId: current.organizations[0]?.id ?? 1,
+        name: values.name ?? '新员工',
+        employeeNo: values.employeeNo ?? `E-${id}`,
+        phone: values.phone ?? '13800000000',
+        organizationId: values.organizationId ?? current.organizations[0]?.id ?? 1,
         status: 'active',
       }],
+    }))
+    message.success('员工已新增')
+  }
+
+  const addUser = (values: Partial<User>): void => {
+    const employee = data.employees.find(item => item.id === values.employeeId)
+    setData(current => ({
+      ...current,
       users: [...current.users, {
-        id,
-        name: values.name ?? '新用户',
-        employeeId: id,
+        id: Date.now(),
+        name: employee?.name ?? values.name ?? '新用户',
+        employeeId: values.employeeId ?? current.employees[0]?.id ?? 1,
         userType: values.userType ?? 'student',
         status: 'active',
       }],
@@ -362,9 +378,9 @@ function AdminApp(): React.ReactElement {
     >
       <PageContainer title={pageTitle(page)}>
         {page === 'dashboard' && <Dashboard activeCourses={activeCourses} activeTasks={activeTasks} data={data} />}
-        {page === 'coursewares' && <CoursewareTable coursewares={data.coursewares} onAdd={addCourseware} />}
+        {page === 'coursewares' && <CoursewareTable coursewares={data.coursewares} categories={data.coursewareCategories} onAdd={addCourseware} />}
         {page === 'coursewareCategories' && <CategoryTree title="课件分类" items={data.coursewareCategories} onAdd={addCoursewareCategory} />}
-        {page === 'courseCategories' && <CategoryTree title="课程分类" items={data.courseCategories} onAdd={addCourseCategory} />}
+        {page === 'courseCategories' && <CourseCategoryTable categories={data.courseCategories} onAdd={addCourseCategory} />}
         {page === 'courses' && <CourseTable courses={data.courses} exams={data.exams} onAdd={addCourse} onPublish={publishCourse} />}
         {page === 'courseDetail' && <CourseDetail course={data.courses[0]!} />}
         {page === 'bindings' && <BindingTable data={data} onAdd={addBinding} />}
@@ -374,7 +390,8 @@ function AdminApp(): React.ReactElement {
         {page === 'tasks' && <TaskTable tasks={data.tasks} courses={data.courses} users={data.users} assignments={data.taskAssignments} onAdd={addTask} onAssign={assignTask} />}
         {page === 'organizations' && <OrganizationTable organizations={data.organizations} onAdd={addOrganization} />}
         {page === 'positions' && <PositionTable positions={data.positions} onAdd={addPosition} />}
-        {page === 'users' && <UserTable users={data.users} onAdd={addUser} />}
+        {page === 'employees' && <EmployeeTable employees={data.employees} organizations={data.organizations} onAdd={addEmployee} />}
+        {page === 'users' && <UserTable users={data.users} employees={data.employees} onAdd={addUser} />}
       </PageContainer>
     </ProLayout>
   )
@@ -395,6 +412,7 @@ function pageTitle(page: PageKey): string {
     tasks: '任务管理',
     organizations: '组织架构管理',
     positions: '岗位管理',
+    employees: '员工管理',
     users: '用户管理',
   }
   return titles[page]
@@ -421,17 +439,31 @@ function Dashboard({ activeCourses, activeTasks, data }: { activeCourses: number
   )
 }
 
-function CoursewareTable({ coursewares, onAdd }: { coursewares: Courseware[], onAdd: (values: Partial<Courseware>) => void }): React.ReactElement {
+function CoursewareTable({ coursewares, categories, onAdd }: { coursewares: Courseware[], categories: CoursewareCategory[], onAdd: (values: Partial<Courseware>) => void }): React.ReactElement {
+  const [coverUrl, setCoverUrl] = useState('')
+
   const finishCreate = async (values: Partial<Courseware>): Promise<boolean> => {
-    onAdd(values)
+    onAdd({ ...values, cover: coverUrl })
+    setCoverUrl('')
     return true
   }
 
   const columns: ProColumns<Courseware>[] = [
+    {
+      title: '封面图',
+      dataIndex: 'cover',
+      search: false,
+      render: (_, record) => record.cover
+        ? <Image width={56} height={36} src={record.cover} preview={false} className="courseware-cover" />
+        : <div className="courseware-cover-placeholder">无封面</div>,
+    },
     { title: '课件名称', dataIndex: 'name' },
     { title: '编码', dataIndex: 'code' },
     { title: '类型', dataIndex: 'type', valueEnum: { 'video': '视频', 'article': '图文', 'document': '文档', '3d': '3D' } },
+    { title: '课件地址', dataIndex: 'url', ellipsis: true, copyable: true },
     { title: '时长', dataIndex: 'duration', renderText: value => `${value} 分钟` },
+    { title: '必修', dataIndex: 'isRequired', render: (_, record) => <Tag color={record.isRequired ? 'red' : 'default'}>{record.isRequired ? '必修' : '选修'}</Tag> },
+    { title: '课件分类', dataIndex: 'categoryId', renderText: value => categories.find(category => category.id === value)?.name ?? '-' },
     { title: '状态', dataIndex: 'status', render: (_, record) => publishTag(record.status) },
   ]
   return (
@@ -445,7 +477,28 @@ function CoursewareTable({ coursewares, onAdd }: { coursewares: Courseware[], on
           <ProFormText name="name" label="课件名称" rules={[{ required: true }]} />
           <ProFormText name="code" label="课件编码" rules={[{ required: true }]} />
           <ProFormSelect name="type" label="课件类型" initialValue="video" options={[{ label: '视频', value: 'video' }, { label: '图文', value: 'article' }, { label: '文档', value: 'document' }, { label: '3D', value: '3d' }]} />
+          <ProFormText name="url" label="课件地址" rules={[{ required: true }]} />
+          <div className="courseware-cover-upload-field">
+            <span className="courseware-cover-upload-label">封面图</span>
+            <Upload
+              id="admin-courseware-cover-upload"
+              accept="image/*"
+              listType="picture-card"
+              maxCount={1}
+              beforeUpload={(file) => {
+                setCoverUrl(URL.createObjectURL(file))
+                return false
+              }}
+              onRemove={() => {
+                setCoverUrl('')
+              }}
+            >
+              {coverUrl ? null : '上传封面'}
+            </Upload>
+          </div>
           <ProFormDigit name="duration" label="学习时长（分钟）" initialValue={10} />
+          <ProFormSelect name="categoryId" label="课件分类" initialValue={categories[0]?.id} options={categories.map(category => ({ label: category.name, value: category.id }))} />
+          <ProFormSelect name="isRequired" label="是否必修" initialValue options={[{ label: '必修', value: true }, { label: '选修', value: false }]} />
           <Upload.Dragger id="admin-courseware-upload" beforeUpload={() => false}>拖拽或点击上传课件文件</Upload.Dragger>
         </ModalForm>,
       ]}
@@ -472,6 +525,32 @@ function CategoryTree({ title, items, onAdd }: { title: string, items: Array<{ i
     >
       <div id={`admin-${title}-tree`}><Tree defaultExpandAll treeData={treeData} /></div>
     </Card>
+  )
+}
+
+function CourseCategoryTable({ categories, onAdd }: { categories: CourseCategory[], onAdd: (values: Partial<CourseCategory>) => void }): React.ReactElement {
+  const finishCreate = async (values: Partial<CourseCategory>): Promise<boolean> => {
+    onAdd(values)
+    return true
+  }
+
+  return (
+    <ProTable<CourseCategory>
+      rowKey="id"
+      search={false}
+      dataSource={categories}
+      columns={[
+        { title: '分类名称', dataIndex: 'name' },
+        { title: '上级分类', dataIndex: 'parentId', renderText: value => categories.find(category => category.id === value)?.name ?? '-' },
+        { title: '排序', dataIndex: 'order' },
+      ]}
+      toolBarRender={() => [
+        <ModalForm key="add" title="新增课程分类" trigger={<Button id="admin-course-category-create-button" type="primary" icon={<PlusOutlined />}>新增分类</Button>} onFinish={finishCreate}>
+          <ProFormText name="name" label="分类名称" rules={[{ required: true }]} />
+          <ProFormSelect name="parentId" label="上级分类" options={categories.map(category => ({ label: category.name, value: category.id }))} />
+        </ModalForm>,
+      ]}
+    />
   )
 }
 
@@ -735,11 +814,44 @@ function PositionTable({ positions, onAdd }: { positions: Position[], onAdd: (va
   )
 }
 
-function UserTable({ users, onAdd }: { users: User[], onAdd: (values: Partial<User>) => void }): React.ReactElement {
+function EmployeeTable({ employees, organizations, onAdd }: { employees: Employee[], organizations: Organization[], onAdd: (values: Partial<Employee>) => void }): React.ReactElement {
+  const finishCreate = async (values: Partial<Employee>): Promise<boolean> => {
+    onAdd(values)
+    return true
+  }
+
+  return (
+    <ProTable<Employee>
+      headerTitle="员工管理"
+      rowKey="id"
+      search={false}
+      dataSource={employees}
+      columns={[
+        { title: '姓名', dataIndex: 'name' },
+        { title: '工号', dataIndex: 'employeeNo' },
+        { title: '手机号', dataIndex: 'phone' },
+        { title: '所属组织', dataIndex: 'organizationId', renderText: value => organizations.find(organization => organization.id === value)?.name ?? '-' },
+        { title: '状态', dataIndex: 'status', renderText: value => value === 'active' ? '在职' : '离职' },
+      ]}
+      toolBarRender={() => [
+        <ModalForm key="add" title="新增员工" trigger={<Button id="admin-employee-create-button" type="primary" icon={<PlusOutlined />}>新增员工</Button>} onFinish={finishCreate}>
+          <ProFormText name="name" label="姓名" rules={[{ required: true }]} />
+          <ProFormText name="employeeNo" label="工号" rules={[{ required: true }]} />
+          <ProFormText name="phone" label="手机号" rules={[{ required: true }]} />
+          <ProFormSelect name="organizationId" label="所属组织" rules={[{ required: true }]} options={organizations.map(organization => ({ label: organization.name, value: organization.id }))} />
+        </ModalForm>,
+      ]}
+    />
+  )
+}
+
+function UserTable({ users, employees, onAdd }: { users: User[], employees: Employee[], onAdd: (values: Partial<User>) => void }): React.ReactElement {
   const finishCreate = async (values: Partial<User>): Promise<boolean> => {
     onAdd(values)
     return true
   }
+
+  const usedEmployeeIds = new Set(users.map(user => user.employeeId))
 
   return (
     <ProTable<User>
@@ -747,10 +859,15 @@ function UserTable({ users, onAdd }: { users: User[], onAdd: (values: Partial<Us
       rowKey="id"
       search={false}
       dataSource={users}
-      columns={[{ title: '姓名', dataIndex: 'name' }, { title: '用户类型', dataIndex: 'userType', renderText: value => value === 'admin' ? '厂端管理员' : '学员' }, { title: '状态', dataIndex: 'status', renderText: value => value === 'active' ? '在职' : '离职' }]}
+      columns={[
+        { title: '姓名', dataIndex: 'name' },
+        { title: '关联员工', dataIndex: 'employeeId', renderText: value => employees.find(employee => employee.id === value)?.employeeNo ?? '-' },
+        { title: '用户类型', dataIndex: 'userType', renderText: value => value === 'admin' ? '厂端管理员' : '学员' },
+        { title: '状态', dataIndex: 'status', renderText: value => value === 'active' ? '在职' : '离职' },
+      ]}
       toolBarRender={() => [
         <ModalForm key="add" title="新增用户" trigger={<Button id="admin-user-create-button" type="primary" icon={<PlusOutlined />}>新增用户</Button>} onFinish={finishCreate}>
-          <ProFormText name="name" label="姓名" rules={[{ required: true }]} />
+          <ProFormSelect name="employeeId" label="关联员工" rules={[{ required: true }]} options={employees.map(employee => ({ label: `${employee.name}（${employee.employeeNo}）`, value: employee.id, disabled: usedEmployeeIds.has(employee.id) }))} />
           <ProFormSelect name="userType" label="用户类型" initialValue="student" options={[{ label: '厂端管理员', value: 'admin' }, { label: '学员', value: 'student' }]} />
         </ModalForm>,
       ]}

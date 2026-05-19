@@ -54,7 +54,7 @@ export function canAccessSection(course: Course, sectionId: ID, learningRecords:
     return targetIndex === 0
 
   const previousSections = sections.slice(0, targetIndex)
-  return previousSections.every(section =>
+  const allPreviousCompleted = previousSections.every(section =>
     learningRecords.some(record =>
       record.courseId === course.id
       && record.sectionId === section.sectionId
@@ -62,6 +62,33 @@ export function canAccessSection(course: Course, sectionId: ID, learningRecords:
       && (userId === undefined || record.userId === userId),
     ),
   )
+  if (!allPreviousCompleted)
+    return false
+
+  // Chapter exam gate: if the previous section belonged to a chapter with
+  // isExamRequired, and the target section is in a *different* chapter, then
+  // the entire previous chapter must be completed (the exam gate is satisfied
+  // when all of its sections are completed — V0.1 has no separate chapter exam entity).
+  const target = sections[targetIndex]!
+  const prev = sections[targetIndex - 1]!
+  if (prev.chapterId !== target.chapterId) {
+    const prevChapter = course.chapters.find(chapter => chapter.id === prev.chapterId)
+    if (prevChapter?.isExamRequired) {
+      const chapterSections = sections.filter(section => section.chapterId === prev.chapterId)
+      const chapterCompleted = chapterSections.every(section =>
+        learningRecords.some(record =>
+          record.courseId === course.id
+          && record.sectionId === section.sectionId
+          && record.status === 'completed'
+          && (userId === undefined || record.userId === userId),
+        ),
+      )
+      if (!chapterCompleted)
+        return false
+    }
+  }
+
+  return true
 }
 
 export function canTakeExam(course: Course, exam: Exam, learningRecords: LearningRecord[], examRecords: ExamRecord[], userId: ID): boolean {
@@ -101,6 +128,7 @@ export function getVisibleTasksForUser(
   positions: Position[],
   courseBindings: Array<{ courseId: ID, positionId: ID }>,
   tasks: Task[],
+  now?: Date,
 ): Task[] {
   const positionIds = userPositions
     .filter(position => position.userId === user.id)
@@ -111,5 +139,15 @@ export function getVisibleTasksForUser(
     .filter(binding => positionSet.has(binding.positionId))
     .map(binding => binding.courseId))
 
-  return tasks.filter(task => visibleCourseIds.has(task.courseId))
+  return tasks.filter((task) => {
+    if (!visibleCourseIds.has(task.courseId))
+      return false
+    // §5.3.3: 学员仅在任务开始后获取任务
+    if (now) {
+      const status = getTaskStatus(now, task)
+      if (status === 'not_started')
+        return false
+    }
+    return true
+  })
 }

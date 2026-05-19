@@ -128,6 +128,14 @@ export interface Question {
   status: 'enabled' | 'disabled'
 }
 
+export interface PaperQuestion {
+  id: ID
+  paperId: ID
+  questionId: ID
+  score: number
+  sortOrder: number
+}
+
 export interface Paper {
   id: ID
   name: string
@@ -211,6 +219,7 @@ export interface LmsData {
   courseCategories: CourseCategory[]
   courses: Course[]
   questions: Question[]
+  paperQuestions: PaperQuestion[]
   papers: Paper[]
   exams: Exam[]
   examRecords: ExamRecord[]

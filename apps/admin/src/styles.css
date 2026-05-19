@@ -50,3 +50,30 @@ body,
   grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
   gap: 16px;
 }
+
+.courseware-cover,
+.courseware-cover-placeholder {
+  object-fit: cover;
+  border-radius: 6px;
+}
+
+.courseware-cover-placeholder {
+  display: grid;
+  width: 56px;
+  height: 36px;
+  place-items: center;
+  color: #64748b;
+  background: #f1f5f9;
+  font-size: 12px;
+}
+
+.courseware-cover-upload-field {
+  margin-bottom: 24px;
+}
+
+.courseware-cover-upload-label {
+  display: block;
+  margin-bottom: 8px;
+  color: #1f2937;
+  font-size: 14px;
+}
