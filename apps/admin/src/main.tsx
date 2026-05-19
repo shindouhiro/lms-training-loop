@@ -1,6 +1,6 @@
 import type { ProColumns } from '@ant-design/pro-components'
-import type { Course, CourseCategory, CoursePositionBinding, Courseware, CoursewareCategory, Employee, Exam, Notification, Organization, Paper, Position, Question, Task, TaskAssignment, User } from '@lms/shared'
-import { PlusOutlined, ReloadOutlined } from '@ant-design/icons'
+import type { Chapter, Course, CourseCategory, CoursePositionBinding, Courseware, CoursewareCategory, Employee, Exam, Notification, Organization, Paper, Position, Question, Section, Task, TaskAssignment, User } from '@lms/shared'
+import { PlusOutlined } from '@ant-design/icons'
 import { ModalForm, PageContainer, ProDescriptions, ProFormDateTimePicker, ProFormDigit, ProFormSelect, ProFormText, ProLayout, ProTable } from '@ant-design/pro-components'
 import { createInitialData, getTaskStatus } from '@lms/shared'
 import { lmsTheme, statusText } from '@lms/ui'
@@ -97,11 +97,6 @@ function AdminApp(): React.ReactElement {
   const activeCourses = data.courses.filter(course => course.status === 'published').length
   const activeTasks = data.tasks.filter(task => getTaskStatus(new Date(), task) === 'active').length
 
-  const resetData = (): void => {
-    setData(createInitialData())
-    message.success('已重置 mock 数据')
-  }
-
   const publishCourse = (id: number): void => {
     setData(current => ({
       ...current,
@@ -151,6 +146,68 @@ function AdminApp(): React.ReactElement {
       ],
     }))
     message.success('课程已创建')
+  }
+
+  const addChapter = (courseId: number, values: Partial<Chapter>): void => {
+    setData(current => ({
+      ...current,
+      courses: current.courses.map((course) => {
+        if (course.id !== courseId)
+          return course
+
+        return {
+          ...course,
+          chapters: [
+            ...course.chapters,
+            {
+              id: Date.now(),
+              courseId,
+              name: values.name ?? '新章节',
+              order: values.order ?? course.chapters.length + 1,
+              isExamRequired: values.isExamRequired ?? false,
+              sections: [],
+            },
+          ],
+        }
+      }),
+    }))
+    message.success('章节已新增')
+  }
+
+  const addSection = (courseId: number, chapterId: number, values: Partial<Section>): void => {
+    const courseware = data.coursewares.find(item => item.id === values.coursewareId)
+
+    setData(current => ({
+      ...current,
+      courses: current.courses.map((course) => {
+        if (course.id !== courseId)
+          return course
+
+        return {
+          ...course,
+          chapters: course.chapters.map((chapter) => {
+            if (chapter.id !== chapterId)
+              return chapter
+
+            return {
+              ...chapter,
+              sections: [
+                ...chapter.sections,
+                {
+                  id: Date.now(),
+                  chapterId,
+                  name: values.name ?? '新小节',
+                  order: values.order ?? chapter.sections.length + 1,
+                  contentType: courseware?.type ?? values.contentType ?? 'video',
+                  coursewareId: values.coursewareId ?? data.coursewares[0]?.id ?? 1,
+                },
+              ],
+            }
+          }),
+        }
+      }),
+    }))
+    message.success('小节已新增')
   }
 
   const addTask = (values: Partial<Task>): void => {
@@ -370,11 +427,6 @@ function AdminApp(): React.ReactElement {
           {dom}
         </button>
       )}
-      actionsRender={() => [
-        <Button id="admin-reset-data-button" key="reset" icon={<ReloadOutlined />} onClick={resetData}>
-          重置数据
-        </Button>,
-      ]}
     >
       <PageContainer title={pageTitle(page)}>
         {page === 'dashboard' && <Dashboard activeCourses={activeCourses} activeTasks={activeTasks} data={data} />}
@@ -382,7 +434,7 @@ function AdminApp(): React.ReactElement {
         {page === 'coursewareCategories' && <CategoryTree title="课件分类" items={data.coursewareCategories} onAdd={addCoursewareCategory} />}
         {page === 'courseCategories' && <CourseCategoryTable categories={data.courseCategories} onAdd={addCourseCategory} />}
         {page === 'courses' && <CourseTable courses={data.courses} exams={data.exams} onAdd={addCourse} onPublish={publishCourse} />}
-        {page === 'courseDetail' && <CourseDetail course={data.courses[0]!} />}
+        {page === 'courseDetail' && <CourseDetail course={data.courses[0]!} coursewares={data.coursewares} onAddChapter={addChapter} onAddSection={addSection} />}
         {page === 'bindings' && <BindingTable data={data} onAdd={addBinding} />}
         {page === 'questions' && <QuestionTable questions={data.questions} onAdd={addQuestion} />}
         {page === 'papers' && <PaperTable papers={data.papers} questions={data.questions} onAdd={addPaper} />}
@@ -586,16 +638,56 @@ function CourseTable({ courses, exams, onAdd, onPublish }: { courses: Course[], 
   )
 }
 
-function CourseDetail({ course }: { course: Course }): React.ReactElement {
+function CourseDetail({ course, coursewares, onAddChapter, onAddSection }: { course: Course, coursewares: Courseware[], onAddChapter: (courseId: number, values: Partial<Chapter>) => void, onAddSection: (courseId: number, chapterId: number, values: Partial<Section>) => void }): React.ReactElement {
+  const finishCreateChapter = async (values: Partial<Chapter>): Promise<boolean> => {
+    onAddChapter(course.id, values)
+    return true
+  }
+
+  const finishCreateSection = async (chapterId: number, values: Partial<Section>): Promise<boolean> => {
+    onAddSection(course.id, chapterId, values)
+    return true
+  }
+
   return (
     <Space direction="vertical" className="full-width" size={16}>
       <ProDescriptions title={course.name} dataSource={course} columns={[{ title: '编码', dataIndex: 'code' }, { title: '描述', dataIndex: 'description' }, { title: '状态', dataIndex: 'status', render: (_, record) => publishTag(record.status) }]} />
-      <Card title="章节与小节">
-        <Tabs items={course.chapters.map(chapter => ({
-          key: String(chapter.id),
-          label: chapter.name,
-          children: <ProTable rowKey="id" search={false} pagination={false} dataSource={chapter.sections} columns={[{ title: '小节', dataIndex: 'name' }, { title: '内容类型', dataIndex: 'contentType' }, { title: '排序', dataIndex: 'order' }]} />,
-        }))}
+      <Card
+        title="章节与小节"
+        extra={(
+          <ModalForm key="add" title="新增章节" trigger={<Button id="admin-chapter-create-button" type="primary" icon={<PlusOutlined />}>新增章节</Button>} onFinish={finishCreateChapter}>
+            <ProFormText name="name" label="章节名称" rules={[{ required: true }]} />
+            <ProFormDigit name="order" label="排序" initialValue={course.chapters.length + 1} min={1} />
+            <ProFormSelect name="isExamRequired" label="是否需要章节考试" initialValue={false} options={[{ label: '不需要', value: false }, { label: '需要', value: true }]} />
+          </ModalForm>
+        )}
+      >
+        <Tabs
+          items={course.chapters.map(chapter => ({
+            key: String(chapter.id),
+            label: `${chapter.order}. ${chapter.name}`,
+            children: (
+              <ProTable<Section>
+                rowKey="id"
+                search={false}
+                pagination={false}
+                dataSource={chapter.sections}
+                columns={[
+                  { title: '小节名称', dataIndex: 'name' },
+                  { title: '内容类型', dataIndex: 'contentType', valueEnum: { 'video': '视频', 'article': '图文', 'document': '文档', '3d': '3D' } },
+                  { title: '引用课件', dataIndex: 'coursewareId', renderText: value => coursewares.find(courseware => courseware.id === value)?.name ?? '-' },
+                  { title: '排序', dataIndex: 'order' },
+                ]}
+                toolBarRender={() => [
+                  <ModalForm key="add" title={`新增小节：${chapter.name}`} trigger={<Button id={`admin-section-create-${chapter.id}`} type="primary" icon={<PlusOutlined />}>新增小节</Button>} onFinish={values => finishCreateSection(chapter.id, values)}>
+                    <ProFormText name="name" label="小节名称" rules={[{ required: true }]} />
+                    <ProFormSelect name="coursewareId" label="引用课件" rules={[{ required: true }]} options={coursewares.map(courseware => ({ label: `${courseware.name}（${courseware.type}）`, value: courseware.id }))} />
+                    <ProFormDigit name="order" label="排序" initialValue={chapter.sections.length + 1} min={1} />
+                  </ModalForm>,
+                ]}
+              />
+            ),
+          }))}
         />
       </Card>
     </Space>

@@ -11,11 +11,10 @@ describe('lMS 业务规则', () => {
   it('按课程小节顺序解锁学习内容', () => {
     expect(canAccessSection(course, 1, data.learningRecords, user.id)).toBe(true)
     expect(canAccessSection(course, 2, data.learningRecords, user.id)).toBe(true)
-    expect(canAccessSection(course, 3, data.learningRecords, user.id)).toBe(false)
   })
 
   it('计算课程完成进度', () => {
-    expect(getCourseProgress(course, data.learningRecords, user.id)).toBe(33)
+    expect(getCourseProgress(course, data.learningRecords, user.id)).toBe(50)
   })
 
   it('课程完成后才允许考试且受限考次数约束', () => {

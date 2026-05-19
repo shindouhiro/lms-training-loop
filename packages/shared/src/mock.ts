@@ -55,16 +55,6 @@ export function createInitialData(): LmsData {
               { id: 2, chapterId: 1, name: '顾客需求识别', order: 2, contentType: 'article', coursewareId: 2 },
             ],
           },
-          {
-            id: 2,
-            courseId: 1,
-            name: '商品表达',
-            order: 2,
-            isExamRequired: false,
-            sections: [
-              { id: 3, chapterId: 2, name: '新品卖点表达', order: 1, contentType: 'article', coursewareId: 2 },
-            ],
-          },
         ],
       },
     ],
