@@ -4,7 +4,31 @@ body,
   min-height: 100%;
   margin: 0;
   font-family: Inter, Roboto, "PingFang SC", "Microsoft YaHei", sans-serif;
-  background: #f5f7fb;
+  background-color: #f8fafc;
+  background-image: radial-gradient(at 100% 0%, hsla(234, 100%, 88%, 0.4) 0px, transparent 50%),
+                    radial-gradient(at 0% 100%, hsla(190, 100%, 88%, 0.4) 0px, transparent 50%);
+  background-attachment: fixed;
+}
+
+.ant-pro-global-header {
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.5) !important;
+  box-shadow: 0 4px 30px rgba(0, 0, 0, 0.03) !important;
+}
+
+.ant-pro-sider {
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border-right: 1px solid rgba(255, 255, 255, 0.5) !important;
+  box-shadow: 4px 0 30px rgba(0, 0, 0, 0.02) !important;
+}
+
+.ant-pro-global-header-logo h1 {
+  background: linear-gradient(135deg, #5C6BFF 0%, #9D4EDD 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  font-weight: 800;
 }
 
 .nav-button {

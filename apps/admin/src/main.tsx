@@ -170,6 +170,25 @@ function AdminApp(): React.ReactElement {
       logo={false}
       route={routes}
       location={{ pathname }}
+      layout="mix"
+      token={{
+        header: {
+          colorBgHeader: 'rgba(255, 255, 255, 0.7)',
+          colorHeaderTitle: '#1e293b',
+          colorTextMenu: '#64748b',
+          colorTextMenuSelected: '#5C6BFF',
+          colorBgMenuItemSelected: 'rgba(92, 107, 255, 0.08)',
+          colorTextRightActionsItem: '#64748b',
+        },
+        sider: {
+          colorMenuBackground: 'rgba(255, 255, 255, 0.6)',
+          colorTextMenuSelected: '#5C6BFF',
+          colorBgMenuItemSelected: 'linear-gradient(90deg, rgba(92,107,255,0.1) 0%, rgba(92,107,255,0) 100%)',
+        },
+        pageContainer: {
+          colorBgPageContainer: 'transparent',
+        }
+      }}
       menuItemRender={(item, dom) => (
         <button id={`admin-nav-${item.path?.replaceAll('/', '-')}`} className="nav-button" onClick={() => item.path && setPathname(item.path)}>
           {dom}

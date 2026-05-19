@@ -9,6 +9,11 @@ body,
 
 .student-shell {
   min-height: 100vh;
+  background-color: #f8fafc;
+  background-image: radial-gradient(at 0% 0%, hsla(234, 100%, 88%, 0.4) 0px, transparent 50%),
+                    radial-gradient(at 100% 0%, hsla(276, 100%, 88%, 0.4) 0px, transparent 50%),
+                    radial-gradient(at 100% 100%, hsla(190, 100%, 88%, 0.4) 0px, transparent 50%);
+  background-attachment: fixed;
 }
 
 .student-header {
@@ -16,21 +21,74 @@ body,
   align-items: center;
   justify-content: space-between;
   height: auto;
-  min-height: 64px;
-  padding: 12px 24px;
-  color: #0f172a;
-  background: rgba(255, 255, 255, 0.9);
-  border-bottom: 1px solid #e2e8f0;
-  backdrop-filter: blur(12px);
+  min-height: 72px;
+  padding: 12px 32px;
+  color: #1e293b;
+  background: rgba(255, 255, 255, 0.7) !important;
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.5);
+  box-shadow: 0 4px 30px rgba(0, 0, 0, 0.03);
+  position: sticky;
+  top: 0;
+  z-index: 50;
 }
 
 .student-header h1 {
   margin: 0;
-  font-size: 20px;
+  font-size: 22px;
+  font-weight: 800;
+  letter-spacing: -0.5px;
+  background: linear-gradient(135deg, #5C6BFF 0%, #9D4EDD 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
 }
 
 .student-body {
-  min-height: calc(100vh - 64px);
+  min-height: calc(100vh - 72px);
+  background: transparent;
+}
+
+.student-sider {
+  background: transparent !important;
+  border-right: none;
+}
+
+.student-nav {
+  display: grid;
+  gap: 12px;
+  padding: 24px 16px;
+}
+
+.student-nav .ant-btn {
+  justify-content: flex-start;
+  height: 48px;
+  border-radius: 12px;
+  font-size: 15px;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.student-nav .ant-btn-primary {
+  background: linear-gradient(135deg, #5C6BFF 0%, #8c73ff 100%);
+  box-shadow: 0 4px 15px rgba(92, 107, 255, 0.25);
+  border: none;
+}
+
+.student-nav .ant-btn-text:hover {
+  background: rgba(92, 107, 255, 0.08);
+  color: #5C6BFF;
+}
+
+.ant-card {
+  background: rgba(255, 255, 255, 0.85);
+  backdrop-filter: blur(12px);
+  border: 1px solid rgba(255, 255, 255, 0.8);
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.ant-card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 12px 30px rgba(0, 0, 0, 0.06);
 }
 
 .student-sider {
