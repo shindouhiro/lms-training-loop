@@ -1,5 +1,5 @@
 import type { ProColumns } from '@ant-design/pro-components'
-import type { Course, Courseware, Exam, Organization, Position, Question, Task, User } from '@lms/shared'
+import type { Course, CourseCategory, CoursePositionBinding, Courseware, CoursewareCategory, Exam, Notification, Organization, Paper, Position, Question, Task, TaskAssignment, User } from '@lms/shared'
 import { PlusOutlined, ReloadOutlined } from '@ant-design/icons'
 import { ModalForm, PageContainer, ProDescriptions, ProFormDateTimePicker, ProFormDigit, ProFormSelect, ProFormText, ProLayout, ProTable } from '@ant-design/pro-components'
 import { createInitialData, getTaskStatus } from '@lms/shared'
@@ -146,12 +146,14 @@ function AdminApp(): React.ReactElement {
   }
 
   const addTask = (values: Partial<Task>): void => {
+    const taskId = Date.now()
+
     setData(current => ({
       ...current,
       tasks: [
         ...current.tasks,
         {
-          id: Date.now(),
+          id: taskId,
           name: values.name ?? '未命名任务',
           courseId: values.courseId ?? 1,
           startTime: String(values.startTime),
@@ -161,7 +163,165 @@ function AdminApp(): React.ReactElement {
         },
       ],
     }))
-    message.success('任务已创建')
+    message.success('任务已创建，请在任务列表中批量指派学员')
+  }
+
+  const assignTask = (taskId: number, userIds: number[]): void => {
+    const task = data.tasks.find(item => item.id === taskId)
+
+    setData((current) => {
+      const existingUserIds = new Set(current.taskAssignments.filter(assignment => assignment.taskId === taskId).map(assignment => assignment.userId))
+      const nextUserIds = userIds.filter(userId => !existingUserIds.has(userId))
+
+      return {
+        ...current,
+        notifications: [
+          ...current.notifications,
+          ...nextUserIds.map<Notification>(userId => ({
+            id: taskId + userId + Date.now(),
+            userId,
+            type: 'course_task',
+            title: '新的课程任务',
+            content: task?.name ?? '你有新的课程任务',
+            isRead: false,
+            sendTime: new Date().toISOString(),
+          })),
+        ],
+        taskAssignments: [
+          ...current.taskAssignments,
+          ...nextUserIds.map<TaskAssignment>(userId => ({
+            id: taskId + userId + Date.now(),
+            taskId,
+            userId,
+          })),
+        ],
+      }
+    })
+    message.success(`已指派 ${userIds.length} 名学员`)
+  }
+
+  const addCoursewareCategory = (values: Partial<CoursewareCategory>): void => {
+    setData(current => ({
+      ...current,
+      coursewareCategories: [...current.coursewareCategories, { id: Date.now(), name: values.name ?? '新课件分类', parentId: values.parentId, order: current.coursewareCategories.length + 1 }],
+    }))
+    message.success('课件分类已新增')
+  }
+
+  const addCourseCategory = (values: Partial<CourseCategory>): void => {
+    setData(current => ({
+      ...current,
+      courseCategories: [...current.courseCategories, { id: Date.now(), name: values.name ?? '新课程分类', parentId: values.parentId, order: current.courseCategories.length + 1 }],
+    }))
+    message.success('课程分类已新增')
+  }
+
+  const addBinding = (values: Partial<CoursePositionBinding>): void => {
+    setData(current => ({
+      ...current,
+      coursePositionBindings: [...current.coursePositionBindings, { id: Date.now(), courseId: values.courseId ?? 1, positionId: values.positionId ?? 1 }],
+    }))
+    message.success('岗位课程绑定已新增')
+  }
+
+  const addQuestion = (values: Partial<Question>): void => {
+    setData(current => ({
+      ...current,
+      questions: [...current.questions, {
+        id: Date.now(),
+        content: values.content ?? '新试题',
+        type: values.type ?? 'single',
+        options: [{ label: '选项 A', value: 'A' }, { label: '选项 B', value: 'B' }],
+        answer: values.type === 'judge' ? true : 'A',
+        analysis: values.analysis ?? '暂无解析',
+        difficulty: values.difficulty ?? 'easy',
+        categoryId: 1,
+        status: 'enabled',
+      }],
+    }))
+    message.success('试题已新增')
+  }
+
+  const addPaper = (values: Partial<Paper> & { questionIds?: number[] }): void => {
+    setData(current => ({
+      ...current,
+      papers: [...current.papers, {
+        id: Date.now(),
+        name: values.name ?? '新试卷',
+        totalScore: values.totalScore ?? 100,
+        questionCount: values.questionIds?.length ?? 0,
+        questionIds: values.questionIds ?? [],
+        status: 'draft',
+      }],
+    }))
+    message.success('试卷已新增')
+  }
+
+  const addExam = (values: Partial<Exam>): void => {
+    setData(current => ({
+      ...current,
+      exams: [...current.exams, {
+        id: Date.now(),
+        name: values.name ?? '新考试',
+        paperId: values.paperId ?? 1,
+        passScore: values.passScore ?? 60,
+        duration: values.duration ?? 45,
+        limitCount: values.limitCount ?? 3,
+        status: 'draft',
+      }],
+    }))
+    message.success('考试已新增')
+  }
+
+  const addOrganization = (values: Partial<Organization>): void => {
+    setData(current => ({
+      ...current,
+      organizations: [...current.organizations, {
+        id: Date.now(),
+        name: values.name ?? '新组织',
+        code: values.code ?? `ORG-${Date.now()}`,
+        type: values.type ?? 'store',
+        parentId: values.parentId,
+      }],
+    }))
+    message.success('组织已新增')
+  }
+
+  const addPosition = (values: Partial<Position>): void => {
+    setData(current => ({
+      ...current,
+      positions: [...current.positions, {
+        id: Date.now(),
+        name: values.name ?? `${values.positionType ?? '岗位'}-${values.level ?? 'L1'}`,
+        code: values.code ?? `POS-${Date.now()}`,
+        positionType: values.positionType ?? '销售',
+        level: values.level ?? 'L1',
+      }],
+    }))
+    message.success('岗位已新增')
+  }
+
+  const addUser = (values: Partial<User>): void => {
+    const id = Date.now()
+    setData(current => ({
+      ...current,
+      employees: [...current.employees, {
+        id,
+        name: values.name ?? '新用户',
+        employeeNo: `E-${id}`,
+        phone: '13800000000',
+        organizationId: current.organizations[0]?.id ?? 1,
+        status: 'active',
+      }],
+      users: [...current.users, {
+        id,
+        name: values.name ?? '新用户',
+        employeeId: id,
+        userType: values.userType ?? 'student',
+        status: 'active',
+      }],
+    }))
+    message.success('用户已新增')
   }
 
   return (
@@ -187,7 +347,7 @@ function AdminApp(): React.ReactElement {
         },
         pageContainer: {
           colorBgPageContainer: 'transparent',
-        }
+        },
       }}
       menuItemRender={(item, dom) => (
         <button id={`admin-nav-${item.path?.replaceAll('/', '-')}`} className="nav-button" onClick={() => item.path && setPathname(item.path)}>
@@ -203,18 +363,18 @@ function AdminApp(): React.ReactElement {
       <PageContainer title={pageTitle(page)}>
         {page === 'dashboard' && <Dashboard activeCourses={activeCourses} activeTasks={activeTasks} data={data} />}
         {page === 'coursewares' && <CoursewareTable coursewares={data.coursewares} onAdd={addCourseware} />}
-        {page === 'coursewareCategories' && <CategoryTree title="课件分类" items={data.coursewareCategories} />}
-        {page === 'courseCategories' && <CategoryTree title="课程分类" items={data.courseCategories} />}
+        {page === 'coursewareCategories' && <CategoryTree title="课件分类" items={data.coursewareCategories} onAdd={addCoursewareCategory} />}
+        {page === 'courseCategories' && <CategoryTree title="课程分类" items={data.courseCategories} onAdd={addCourseCategory} />}
         {page === 'courses' && <CourseTable courses={data.courses} exams={data.exams} onAdd={addCourse} onPublish={publishCourse} />}
         {page === 'courseDetail' && <CourseDetail course={data.courses[0]!} />}
-        {page === 'bindings' && <BindingTable data={data} />}
-        {page === 'questions' && <QuestionTable questions={data.questions} />}
-        {page === 'papers' && <SimpleTable title="试卷列表" dataSource={data.papers} />}
-        {page === 'exams' && <ExamTable exams={data.exams} />}
-        {page === 'tasks' && <TaskTable tasks={data.tasks} courses={data.courses} onAdd={addTask} />}
-        {page === 'organizations' && <SimpleTable<Organization> title="组织架构" dataSource={data.organizations} />}
-        {page === 'positions' && <SimpleTable<Position> title="岗位管理" dataSource={data.positions} />}
-        {page === 'users' && <SimpleTable<User> title="用户管理" dataSource={data.users} />}
+        {page === 'bindings' && <BindingTable data={data} onAdd={addBinding} />}
+        {page === 'questions' && <QuestionTable questions={data.questions} onAdd={addQuestion} />}
+        {page === 'papers' && <PaperTable papers={data.papers} questions={data.questions} onAdd={addPaper} />}
+        {page === 'exams' && <ExamTable exams={data.exams} papers={data.papers} onAdd={addExam} />}
+        {page === 'tasks' && <TaskTable tasks={data.tasks} courses={data.courses} users={data.users} assignments={data.taskAssignments} onAdd={addTask} onAssign={assignTask} />}
+        {page === 'organizations' && <OrganizationTable organizations={data.organizations} onAdd={addOrganization} />}
+        {page === 'positions' && <PositionTable positions={data.positions} onAdd={addPosition} />}
+        {page === 'users' && <UserTable users={data.users} onAdd={addUser} />}
       </PageContainer>
     </ProLayout>
   )
@@ -293,9 +453,26 @@ function CoursewareTable({ coursewares, onAdd }: { coursewares: Courseware[], on
   )
 }
 
-function CategoryTree({ title, items }: { title: string, items: Array<{ id: number, name: string, parentId?: number }> }): React.ReactElement {
+function CategoryTree({ title, items, onAdd }: { title: string, items: Array<{ id: number, name: string, parentId?: number }>, onAdd: (values: { name?: string, parentId?: number }) => void }): React.ReactElement {
+  const finishCreate = async (values: { name?: string, parentId?: number }): Promise<boolean> => {
+    onAdd(values)
+    return true
+  }
+
   const treeData = items.map(item => ({ key: item.id, title: item.name }))
-  return <Card title={title}><div id={`admin-${title}-tree`}><Tree defaultExpandAll treeData={treeData} /></div></Card>
+  return (
+    <Card
+      title={title}
+      extra={(
+        <ModalForm key="add" title={`新增${title}`} trigger={<Button id={`admin-${title}-create-button`} type="primary" icon={<PlusOutlined />}>新增分类</Button>} onFinish={finishCreate}>
+          <ProFormText name="name" label="分类名称" rules={[{ required: true }]} />
+          <ProFormSelect name="parentId" label="上级分类" options={items.map(item => ({ label: item.name, value: item.id }))} />
+        </ModalForm>
+      )}
+    >
+      <div id={`admin-${title}-tree`}><Tree defaultExpandAll treeData={treeData} /></div>
+    </Card>
+  )
 }
 
 function CourseTable({ courses, exams, onAdd, onPublish }: { courses: Course[], exams: Exam[], onAdd: (values: Partial<Course>) => void, onPublish: (id: number) => void }): React.ReactElement {
@@ -346,36 +523,156 @@ function CourseDetail({ course }: { course: Course }): React.ReactElement {
   )
 }
 
-function BindingTable({ data }: { data: typeof initialData }): React.ReactElement {
+function BindingTable({ data, onAdd }: { data: typeof initialData, onAdd: (values: Partial<CoursePositionBinding>) => void }): React.ReactElement {
+  const finishCreate = async (values: Partial<CoursePositionBinding>): Promise<boolean> => {
+    onAdd(values)
+    return true
+  }
+
   const rows = data.coursePositionBindings.map(binding => ({
     ...binding,
     courseName: data.courses.find(course => course.id === binding.courseId)?.name,
     positionName: data.positions.find(position => position.id === binding.positionId)?.name,
   }))
-  return <ProTable rowKey="id" search={false} dataSource={rows} columns={[{ title: '课程', dataIndex: 'courseName' }, { title: '岗位等级', dataIndex: 'positionName' }]} />
-}
-
-function QuestionTable({ questions }: { questions: Question[] }): React.ReactElement {
-  return <ProTable<Question> rowKey="id" search={false} dataSource={questions} columns={[{ title: '题目', dataIndex: 'content' }, { title: '题型', dataIndex: 'type' }, { title: '难度', dataIndex: 'difficulty' }, { title: '状态', dataIndex: 'status', render: (_, record) => <Tag color={record.status === 'enabled' ? 'green' : 'default'}>{record.status === 'enabled' ? '启用' : '禁用'}</Tag> }]} />
-}
-
-function ExamTable({ exams }: { exams: Exam[] }): React.ReactElement {
-  return <ProTable<Exam> rowKey="id" search={false} dataSource={exams} columns={[{ title: '考试名称', dataIndex: 'name' }, { title: '合格分', dataIndex: 'passScore' }, { title: '时长', dataIndex: 'duration', renderText: value => `${value} 分钟` }, { title: '限考次数', dataIndex: 'limitCount' }, { title: '状态', dataIndex: 'status', render: (_, record) => publishTag(record.status) }]} />
-}
-
-function TaskTable({ tasks, courses, onAdd }: { tasks: Task[], courses: Course[], onAdd: (values: Partial<Task>) => void }): React.ReactElement {
-  const finishCreate = async (values: Partial<Task>): Promise<boolean> => {
-    onAdd(values)
-    return true
-  }
-
-  const rows = useMemo(() => tasks.map(task => ({ ...task, computedStatus: getTaskStatus(new Date(), task), courseName: courses.find(course => course.id === task.courseId)?.name })), [courses, tasks])
   return (
     <ProTable
       rowKey="id"
       search={false}
       dataSource={rows}
-      columns={[{ title: '任务名称', dataIndex: 'name' }, { title: '课程', dataIndex: 'courseName' }, { title: '开始时间', dataIndex: 'startTime' }, { title: '截止时间', dataIndex: 'endTime' }, { title: '状态', dataIndex: 'computedStatus', render: (_, record) => <Tag>{statusText[record.computedStatus as keyof typeof statusText]}</Tag> }]}
+      columns={[{ title: '课程', dataIndex: 'courseName' }, { title: '岗位等级', dataIndex: 'positionName' }]}
+      toolBarRender={() => [
+        <ModalForm key="add" title="新增岗位课程绑定" trigger={<Button id="admin-binding-create-button" type="primary" icon={<PlusOutlined />}>新增绑定</Button>} onFinish={finishCreate}>
+          <ProFormSelect name="courseId" label="课程" rules={[{ required: true }]} options={data.courses.map(course => ({ label: course.name, value: course.id }))} />
+          <ProFormSelect name="positionId" label="岗位等级" rules={[{ required: true }]} options={data.positions.map(position => ({ label: position.name, value: position.id }))} />
+        </ModalForm>,
+      ]}
+    />
+  )
+}
+
+function QuestionTable({ questions, onAdd }: { questions: Question[], onAdd: (values: Partial<Question>) => void }): React.ReactElement {
+  const finishCreate = async (values: Partial<Question>): Promise<boolean> => {
+    onAdd(values)
+    return true
+  }
+
+  return (
+    <ProTable<Question>
+      rowKey="id"
+      search={false}
+      dataSource={questions}
+      columns={[{ title: '题目', dataIndex: 'content' }, { title: '题型', dataIndex: 'type' }, { title: '难度', dataIndex: 'difficulty' }, { title: '状态', dataIndex: 'status', render: (_, record) => <Tag color={record.status === 'enabled' ? 'green' : 'default'}>{record.status === 'enabled' ? '启用' : '禁用'}</Tag> }]}
+      toolBarRender={() => [
+        <ModalForm key="add" title="新增试题" trigger={<Button id="admin-question-create-button" type="primary" icon={<PlusOutlined />}>新增试题</Button>} onFinish={finishCreate}>
+          <ProFormText name="content" label="题干" rules={[{ required: true }]} />
+          <ProFormSelect name="type" label="题型" initialValue="single" options={[{ label: '单选', value: 'single' }, { label: '多选', value: 'multiple' }, { label: '判断', value: 'judge' }]} />
+          <ProFormSelect name="difficulty" label="难度" initialValue="easy" options={[{ label: '简单', value: 'easy' }, { label: '中等', value: 'medium' }, { label: '困难', value: 'hard' }]} />
+          <ProFormText name="analysis" label="解析" />
+        </ModalForm>,
+      ]}
+    />
+  )
+}
+
+function PaperTable({ papers, questions, onAdd }: { papers: Paper[], questions: Question[], onAdd: (values: Partial<Paper> & { questionIds?: number[] }) => void }): React.ReactElement {
+  const finishCreate = async (values: Partial<Paper> & { questionIds?: number[] }): Promise<boolean> => {
+    onAdd(values)
+    return true
+  }
+
+  return (
+    <ProTable<Paper>
+      rowKey="id"
+      search={false}
+      dataSource={papers}
+      columns={[{ title: '试卷名称', dataIndex: 'name' }, { title: '总分', dataIndex: 'totalScore' }, { title: '题量', dataIndex: 'questionCount' }, { title: '状态', dataIndex: 'status', render: (_, record) => publishTag(record.status) }]}
+      toolBarRender={() => [
+        <ModalForm key="add" title="新增试卷" trigger={<Button id="admin-paper-create-button" type="primary" icon={<PlusOutlined />}>新增试卷</Button>} onFinish={finishCreate}>
+          <ProFormText name="name" label="试卷名称" rules={[{ required: true }]} />
+          <ProFormDigit name="totalScore" label="总分" initialValue={100} />
+          <ProFormSelect name="questionIds" label="选择试题" mode="multiple" options={questions.map(question => ({ label: question.content, value: question.id }))} />
+        </ModalForm>,
+      ]}
+    />
+  )
+}
+
+function ExamTable({ exams, papers, onAdd }: { exams: Exam[], papers: Paper[], onAdd: (values: Partial<Exam>) => void }): React.ReactElement {
+  const finishCreate = async (values: Partial<Exam>): Promise<boolean> => {
+    onAdd(values)
+    return true
+  }
+
+  return (
+    <ProTable<Exam>
+      rowKey="id"
+      search={false}
+      dataSource={exams}
+      columns={[{ title: '考试名称', dataIndex: 'name' }, { title: '合格分', dataIndex: 'passScore' }, { title: '时长', dataIndex: 'duration', renderText: value => `${value} 分钟` }, { title: '限考次数', dataIndex: 'limitCount' }, { title: '状态', dataIndex: 'status', render: (_, record) => publishTag(record.status) }]}
+      toolBarRender={() => [
+        <ModalForm key="add" title="新增考试" trigger={<Button id="admin-exam-create-button" type="primary" icon={<PlusOutlined />}>新增考试</Button>} onFinish={finishCreate}>
+          <ProFormText name="name" label="考试名称" rules={[{ required: true }]} />
+          <ProFormSelect name="paperId" label="关联试卷" rules={[{ required: true }]} options={papers.map(paper => ({ label: paper.name, value: paper.id }))} />
+          <ProFormDigit name="passScore" label="合格分" initialValue={60} />
+          <ProFormDigit name="duration" label="考试时长（分钟）" initialValue={45} />
+          <ProFormDigit name="limitCount" label="限考次数" initialValue={3} />
+        </ModalForm>,
+      ]}
+    />
+  )
+}
+
+function TaskTable({ tasks, courses, users, assignments, onAdd, onAssign }: { tasks: Task[], courses: Course[], users: User[], assignments: TaskAssignment[], onAdd: (values: Partial<Task>) => void, onAssign: (taskId: number, userIds: number[]) => void }): React.ReactElement {
+  const finishCreate = async (values: Partial<Task>): Promise<boolean> => {
+    onAdd(values)
+    return true
+  }
+
+  const finishAssign = async (taskId: number, values: { userIds?: number[] }): Promise<boolean> => {
+    onAssign(taskId, values.userIds ?? [])
+    return true
+  }
+
+  const students = users.filter(user => user.userType === 'student')
+  const rows = useMemo(() => tasks.map(task => ({
+    ...task,
+    assignedCount: assignments.filter(assignment => assignment.taskId === task.id).length,
+    computedStatus: getTaskStatus(new Date(), task),
+    courseName: courses.find(course => course.id === task.courseId)?.name,
+  })), [assignments, courses, tasks])
+  return (
+    <ProTable
+      rowKey="id"
+      search={false}
+      dataSource={rows}
+      columns={[
+        { title: '任务名称', dataIndex: 'name' },
+        { title: '课程', dataIndex: 'courseName' },
+        { title: '已指派', dataIndex: 'assignedCount', renderText: value => `${value} 人` },
+        { title: '开始时间', dataIndex: 'startTime' },
+        { title: '截止时间', dataIndex: 'endTime' },
+        { title: '状态', dataIndex: 'computedStatus', render: (_, record) => <Tag>{statusText[record.computedStatus as keyof typeof statusText]}</Tag> },
+        {
+          title: '操作',
+          valueType: 'option',
+          render: (_, record) => [
+            <ModalForm
+              key="assign"
+              title={`批量指派：${record.name}`}
+              trigger={<Button id={`admin-task-assign-${record.id}`} type="link">批量指派</Button>}
+              onFinish={values => finishAssign(record.id, values)}
+            >
+              <ProFormSelect
+                name="userIds"
+                label="指派学员"
+                mode="multiple"
+                rules={[{ required: true, message: '请选择至少一名学员' }]}
+                options={students.map(user => ({ label: user.name, value: user.id, disabled: assignments.some(assignment => assignment.taskId === record.id && assignment.userId === user.id) }))}
+              />
+            </ModalForm>,
+          ],
+        },
+      ]}
       toolBarRender={() => [
         <ModalForm key="add" title="创建任务" trigger={<Button id="admin-task-create-button" type="primary" icon={<PlusOutlined />}>创建任务</Button>} onFinish={finishCreate}>
           <ProFormText name="name" label="任务名称" rules={[{ required: true }]} />
@@ -388,8 +685,77 @@ function TaskTable({ tasks, courses, onAdd }: { tasks: Task[], courses: Course[]
   )
 }
 
-function SimpleTable<T extends { id: number, name?: string, code?: string }>({ title, dataSource }: { title: string, dataSource: T[] }): React.ReactElement {
-  return <ProTable<T> headerTitle={title} rowKey="id" search={false} dataSource={dataSource} columns={[{ title: '名称', dataIndex: 'name' }, { title: '编码', dataIndex: 'code' }]} />
+function OrganizationTable({ organizations, onAdd }: { organizations: Organization[], onAdd: (values: Partial<Organization>) => void }): React.ReactElement {
+  const finishCreate = async (values: Partial<Organization>): Promise<boolean> => {
+    onAdd(values)
+    return true
+  }
+
+  return (
+    <ProTable<Organization>
+      headerTitle="组织架构"
+      rowKey="id"
+      search={false}
+      dataSource={organizations}
+      columns={[{ title: '组织名称', dataIndex: 'name' }, { title: '编码', dataIndex: 'code' }, { title: '类型', dataIndex: 'type', renderText: value => value === 'factory' ? '厂端' : '门店' }, { title: '上级组织', dataIndex: 'parentId', renderText: value => organizations.find(item => item.id === value)?.name ?? '-' }]}
+      toolBarRender={() => [
+        <ModalForm key="add" title="新增组织" trigger={<Button id="admin-organization-create-button" type="primary" icon={<PlusOutlined />}>新增组织</Button>} onFinish={finishCreate}>
+          <ProFormText name="name" label="组织名称" rules={[{ required: true }]} />
+          <ProFormText name="code" label="组织编码" rules={[{ required: true }]} />
+          <ProFormSelect name="type" label="组织类型" initialValue="store" options={[{ label: '厂端', value: 'factory' }, { label: '门店', value: 'store' }]} />
+          <ProFormSelect name="parentId" label="上级组织" options={organizations.map(item => ({ label: item.name, value: item.id }))} />
+        </ModalForm>,
+      ]}
+    />
+  )
+}
+
+function PositionTable({ positions, onAdd }: { positions: Position[], onAdd: (values: Partial<Position>) => void }): React.ReactElement {
+  const finishCreate = async (values: Partial<Position>): Promise<boolean> => {
+    onAdd(values)
+    return true
+  }
+
+  return (
+    <ProTable<Position>
+      headerTitle="岗位管理"
+      rowKey="id"
+      search={false}
+      dataSource={positions}
+      columns={[{ title: '岗位名称', dataIndex: 'name' }, { title: '编码', dataIndex: 'code' }, { title: '岗位类型', dataIndex: 'positionType' }, { title: '等级', dataIndex: 'level' }]}
+      toolBarRender={() => [
+        <ModalForm key="add" title="新增岗位" trigger={<Button id="admin-position-create-button" type="primary" icon={<PlusOutlined />}>新增岗位</Button>} onFinish={finishCreate}>
+          <ProFormText name="name" label="岗位名称" rules={[{ required: true }]} />
+          <ProFormText name="code" label="岗位编码" rules={[{ required: true }]} />
+          <ProFormText name="positionType" label="岗位类型" rules={[{ required: true }]} />
+          <ProFormSelect name="level" label="等级" initialValue="L1" options={[{ label: 'L1', value: 'L1' }, { label: 'L2', value: 'L2' }, { label: 'L3', value: 'L3' }]} />
+        </ModalForm>,
+      ]}
+    />
+  )
+}
+
+function UserTable({ users, onAdd }: { users: User[], onAdd: (values: Partial<User>) => void }): React.ReactElement {
+  const finishCreate = async (values: Partial<User>): Promise<boolean> => {
+    onAdd(values)
+    return true
+  }
+
+  return (
+    <ProTable<User>
+      headerTitle="用户管理"
+      rowKey="id"
+      search={false}
+      dataSource={users}
+      columns={[{ title: '姓名', dataIndex: 'name' }, { title: '用户类型', dataIndex: 'userType', renderText: value => value === 'admin' ? '厂端管理员' : '学员' }, { title: '状态', dataIndex: 'status', renderText: value => value === 'active' ? '在职' : '离职' }]}
+      toolBarRender={() => [
+        <ModalForm key="add" title="新增用户" trigger={<Button id="admin-user-create-button" type="primary" icon={<PlusOutlined />}>新增用户</Button>} onFinish={finishCreate}>
+          <ProFormText name="name" label="姓名" rules={[{ required: true }]} />
+          <ProFormSelect name="userType" label="用户类型" initialValue="student" options={[{ label: '厂端管理员', value: 'admin' }, { label: '学员', value: 'student' }]} />
+        </ModalForm>,
+      ]}
+    />
+  )
 }
 
 createRoot(document.getElementById('root')!).render(

@@ -1,8 +1,8 @@
 import type { Course, ID, LearningRecord, Question } from '@lms/shared'
-import { BookOutlined, CheckCircleOutlined, FileDoneOutlined, UserOutlined } from '@ant-design/icons'
+import { BellOutlined, BookOutlined, CheckCircleOutlined, FileDoneOutlined, UserOutlined } from '@ant-design/icons'
 import { canAccessSection, canTakeExam, createInitialData, getCourseProgress, getVisibleTasksForUser, gradeExam } from '@lms/shared'
 import { lmsTheme, statusText } from '@lms/ui'
-import { App, Avatar, Button, Card, Checkbox, ConfigProvider, Descriptions, Empty, Layout, List, Progress, Radio, Result, Space, Statistic, Steps, Tabs, Tag, Typography } from 'antd'
+import { App, Avatar, Badge, Button, Card, Checkbox, ConfigProvider, Descriptions, Empty, Layout, List, Popover, Progress, Radio, Result, Space, Statistic, Steps, Tabs, Tag, Typography } from 'antd'
 import zhCN from 'antd/locale/zh_CN'
 import React, { useState } from 'react'
 import { createRoot } from 'react-dom/client'
@@ -31,6 +31,10 @@ function StudentApp(): React.ReactElement {
     .filter((course): course is Course => Boolean(course))
 
   const canExam = canTakeExam(selectedCourse, exam, data.learningRecords, data.examRecords, currentUserId)
+  const notifications = data.notifications
+    .filter(notification => notification.userId === currentUserId)
+    .sort((a, b) => new Date(b.sendTime).getTime() - new Date(a.sendTime).getTime())
+  const unreadCount = notifications.filter(notification => !notification.isRead).length
 
   const completeSection = (course: Course, sectionId: ID): void => {
     const chapter = course.chapters.find(item => item.sections.some(section => section.id === sectionId))
@@ -95,11 +99,27 @@ function StudentApp(): React.ReactElement {
     setView('courses')
   }
 
+  const markAllNotificationsRead = (): void => {
+    setData(current => ({
+      ...current,
+      notifications: current.notifications.map(notification => notification.userId === currentUserId ? { ...notification, isRead: true } : notification),
+    }))
+  }
+
+  const openNotification = (notificationId: ID): void => {
+    setData(current => ({
+      ...current,
+      notifications: current.notifications.map(notification => notification.id === notificationId ? { ...notification, isRead: true } : notification),
+    }))
+    setView('tasks')
+  }
+
   return (
     <Layout className="student-shell">
       <Layout.Header className="student-header">
         <Typography.Title level={1}>LMS 学员端</Typography.Title>
-        <Space>
+        <Space size={16}>
+          <NotificationBell notifications={notifications} unreadCount={unreadCount} onMarkAllRead={markAllNotificationsRead} onOpen={openNotification} />
           <Avatar icon={<UserOutlined />} />
           <span>{currentUser.name}</span>
         </Space>
@@ -121,6 +141,48 @@ function StudentApp(): React.ReactElement {
         </Layout.Content>
       </Layout>
     </Layout>
+  )
+}
+
+function NotificationBell({ notifications, unreadCount, onMarkAllRead, onOpen }: { notifications: typeof initialData.notifications, unreadCount: number, onMarkAllRead: () => void, onOpen: (notificationId: ID) => void }): React.ReactElement {
+  const content = (
+    <div className="notification-panel">
+      <div className="notification-panel-header">
+        <Typography.Text strong>通知</Typography.Text>
+        <Button id="student-notification-read-all" type="link" size="small" disabled={unreadCount === 0} onClick={onMarkAllRead}>全部已读</Button>
+      </div>
+      <List
+        locale={{ emptyText: <Empty image={Empty.PRESENTED_IMAGE_SIMPLE} description="暂无通知" /> }}
+        dataSource={notifications}
+        renderItem={notification => (
+          <List.Item className={notification.isRead ? 'notification-item' : 'notification-item notification-item-unread'} onClick={() => onOpen(notification.id)}>
+            <List.Item.Meta
+              title={(
+                <Space>
+                  <span>{notification.title}</span>
+                  {!notification.isRead && <Tag color="blue">未读</Tag>}
+                </Space>
+              )}
+              description={(
+                <span>
+                  {notification.content}
+                  <br />
+                  {notification.sendTime}
+                </span>
+              )}
+            />
+          </List.Item>
+        )}
+      />
+    </div>
+  )
+
+  return (
+    <Popover trigger="click" placement="bottomRight" content={content}>
+      <Badge count={unreadCount} size="small">
+        <Button id="student-notification-button" aria-label="查看通知" shape="circle" icon={<BellOutlined />} />
+      </Badge>
+    </Popover>
   )
 }
 
